@@ -1,0 +1,315 @@
+---
+title: 'CptS 575 Data Science: Assignment 2'
+author: "Md Muhtasim Billah"
+date: "9/11/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.align='center',message=FALSE,warning=FALSE  )
+```
+
+# Qestion 1
+
+## 1 (a)
+
+Reading in the data in R as a data frame.
+
+```{r}
+college = read.csv(url("https://scads.eecs.wsu.edu/wp-content/uploads/2017/09/College.csv"),
+                   header = TRUE)
+```
+
+## 1 (b)
+
+The median cost of books for all schools in this dataset.
+
+```{r}
+median(college$Books)
+```
+
+## 1 (c)
+
+Scatter plot of Outsate vs perc.alumni. Surprisingly, the out-of-state tuition shows a linearly increasing relationship with the percentage of alumni of the school who donate.
+
+```{r}
+library(ggplot2)
+plot1 = ggplot(data=college, aes(x=perc.alumni, y=Outstate)) +
+  geom_point(color="darkorange2", shape=5, size=1) +
+  ggtitle("Does alumni donation help reduce out-of-state tuition?") + ylab("Out-of-state Tuition") + xlab("% Alumni who Donate") + labs(fill = "Time Zone") +
+  theme(
+    panel.background = element_rect(fill = "grey30"),
+    panel.grid.major = element_line(colour = "grey60", size=0.25),
+    panel.grid.minor = element_line(colour = "grey60", linetype = "dashed"),
+    plot.title = element_text(size=15, hjust=0.5, vjust = 3.5, family = "Palatino", colour = "Black",
+                              margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", colour = "Black",
+                                margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", colour = "Black",
+                                margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+  )
+
+plot1
+```
+
+## 1 (d)
+
+The histogram showing the overall enrollment numbers (P.Undergrad plus F.Undergrad) for both public and private (Private) schools.
+
+```{r fig.height=4.5, fig.width=9}
+#create column for overall undergrads
+college$O.undergrad = college$P.Undergrad + college$F.Undergrad
+
+plot2 = ggplot(data=college, aes(x=X, y=O.undergrad, fill=Private)) +
+  geom_bar(stat="identity", position=position_dodge()) +
+  coord_cartesian(ylim=c(0,40000)) + scale_fill_manual(labels = c("Public","Private"),values = c("olivedrab3", "deepskyblue3")) +
+  ggtitle("Overall Undergrads (Public vs Private)") + ylab("Overall Number of Students") +   xlab("Schools") + #labs(fill = "Private?") +
+  theme(
+    panel.background = element_rect(fill = "grey20"),
+    panel.grid.major = element_line(colour = "grey60", size=0.25),
+    panel.grid.minor = element_line(colour = "grey60", linetype = "dashed"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.title = element_text(size=15, hjust=0.5, vjust = 1.5, family = "Palatino", colour = "Black", margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", colour = "Black", margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_blank(),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", colour = "Black", margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    legend.background = element_rect(fill = "transparent"),
+    legend.title=element_blank(),
+    legend.text = element_text(color = "White",family = "Palatino", size=10),
+    legend.position = c(.05, .95),
+    legend.justification = c("left", "top"),
+    legend.box.just = "left",
+    legend.margin = margin(6, 6, 6, 6),
+    legend.direction = "horizontal"
+  )
+
+plot2
+```
+
+## 1 (e)
+
+```{r}
+Top = ifelse(college$Top10perc >75, "Yes", "No") 
+table(Top)
+```
+
+So, there are 22 top universities.
+
+The side-by-side boxplots of the schools' acceptance rates.
+
+```{r}
+college$Acceptance.Rate = college$Accept / college$Apps
+
+plot3 = ggplot(data=college, aes(x=Top, y=Acceptance.Rate, color=Top, fill=Top)) +
+  geom_boxplot(notch=TRUE, width=0.1) + 
+  scale_color_manual(labels = c("Others","Top"), values = c("olivedrab3", "deepskyblue3")) +  
+  scale_fill_manual(labels = c("Others","Top"), values = c("olivedrab3", "deepskyblue3")) +
+  ggtitle("Acceptance Rate of Top vs Other Schools") + ylab("Acceptance Rate") + xlab("Schools") +
+  theme(
+    panel.background = element_rect(fill = "grey30"),
+    panel.grid.major = element_line(colour = "grey60", size=0.25),
+    panel.grid.minor = element_line(colour = "grey60", linetype = "dashed"),
+    plot.title = element_text(size=15, hjust=0.5, vjust = 3.5, family = "Palatino", colour = "Black",
+                              margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", colour = "Black",
+                                margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_blank(),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", colour = "Black",
+                                margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    legend.title = element_blank(),
+    legend.position="right",
+  )
+
+plot3
+```
+
+
+## 1 (f)
+
+\underline{First Plot:}
+
+The bar plot below demonstrates the comparison of the acceptance rates between the public and private schools. It is apparent from the plot that the private schools have a slightly higher acceptane rate. However, for private schools, the value is verh widely spread indicating to a higher standard deviation, unlike the public schools.
+
+```{r fig.align='center'}
+plot4 = ggplot(data=college, aes(x=Private, y=Acceptance.Rate, color=Private, fill=Private)) +
+  geom_boxplot(notch=TRUE, width=0.1) + 
+  scale_color_manual(labels = c("Public", "Private"), values = c("orange", "orchid3")) +  
+  scale_fill_manual(labels = c("Public", "Private"), values = c("orange", "orchid3")) +
+  ggtitle("Acceptance Rate of Public vs Private Schools") + ylab("Acceptance Rate") + xlab("Schools") +
+  theme(
+    panel.background = element_rect(fill = "grey30"),
+    panel.grid.major = element_line(colour = "grey60", size=0.25),
+    panel.grid.minor = element_line(colour = "grey60", linetype = "dashed"),
+    plot.title = element_text(size=15, hjust=0.5, vjust = 3.5, family = "Palatino", colour = "Black",
+                              margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", colour = "Black",
+                                margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_blank(),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", colour = "Black",
+                                margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    legend.title = element_blank(),
+    legend.position="right",
+  )
+
+plot4
+```
+
+\underline{Second Plot:}
+
+The following plot shows the Kernel density of the variable Outstate which is the out-of-state tuition for the schools in the dataset. The distribution seems to be a bit skewed to the left.
+
+
+```{r}
+# Histogram overlaid with kernel density curve
+plot5 =ggplot(college, aes(x=Outstate)) + 
+  geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   
+                   colour="white", fill="darkorange") +
+  geom_density(alpha = .15, color = "white", fill="white") +
+    ggtitle("Distribution of Out-of-state Tuition") + ylab("Density") + xlab("Outstate") +
+  theme(
+    panel.background = element_rect(fill = "grey30"),
+    panel.grid.major = element_line(colour = "grey60", size=0.25),
+    panel.grid.minor = element_line(colour = "grey60", linetype = "dashed"),
+    plot.title = element_text(size=15, hjust=0.5, vjust = 3.5, family = "Palatino", colour = "Black",
+                              margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", colour = "Black",
+                                margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", colour = "Black",
+                                margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+  )
+plot5
+```
+
+
+
+#################################################################################################
+\newpage
+
+# Question 2
+
+```{r}
+autodata = read.csv(url("https://scads.eecs.wsu.edu/wp-content/uploads/2017/09/Auto.csv"),
+                   header = TRUE)
+attach(autodata)
+```
+
+No missing values were found in the dataset.
+
+## 2 (a)
+
+\underline{Quantitative predictors:}  "mpg", "cylinders", "displacement", "horsepower", "weight", "acceleration".\newline
+\underline{Qualitative predictors:} "year", "origin", "name".
+
+
+## 2 (b)
+
+The range, mean and standard deviation of each quantitative predictor is given below.
+
+```{r}
+horsepower = as.numeric(autodata$horsepower)
+quant.var = data.frame(mpg,cylinders,displacement,horsepower,weight,acceleration)
+summary(quant.var)
+sd(quant.var$mpg)
+sd(quant.var$cylinders)
+sd(quant.var$displacement)
+sd(quant.var$horsepower)
+sd(quant.var$weight)
+sd(quant.var$acceleration)
+```
+
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Variables}     & \textbf{Range} & \textbf{Mean} & \textbf{SD} \\
+\hline
+mpg     & 37.6 & 23.52 & 7.82 \\
+\hline
+cylinders   & 5 & 5.46 & 1.70  \\
+\hline
+displacement    & 387 & 193.53 & 104.38  \\
+\hline
+horsepower       & 93 & 51.12 & 29.86  \\
+\hline
+weight & 3509 & 146 & 33.29  \\
+\hline
+acceleration        & 16.8 & 15.56 & 2.74    \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\textbf{Table 1:} Statistical parameters for quantitative variables (whole dataset)
+\end{center}
+
+
+
+## 2 (c)
+
+After removing the 40th through 80th (inclusive) observations from the dataset, the range, mean, and standard deviation of each predictor in the subset of the data are given below.
+
+
+```{r}
+autodata2 = autodata[-c(40:80),] # Data after discarding rows 40 to 80 inclusive
+horsepower = as.numeric(autodata2$horsepower)
+summary(autodata2)
+```
+
+\begin{center}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Variable}  & \textbf{Range} & \textbf{Mean} & \textbf{SD} \\ \hline
+mpg                           & 37.6               & 24.02         & 7.83                        \\ \hline
+cylinder                        & 5                  & 5.399         & 1.65                        \\ \hline
+displacement                  & 387                & 189.2         & 100.88                      \\ \hline
+horsepower                   & 93                & 51.67        & 30.36                       \\ \hline
+weight                        & 3348                & 2935         & 810.84                       \\ \hline
+acceleration                 & 16.8                & 15.61        & 2.712                      \\ \hline
+\end{tabular}
+\end{center}
+
+\begin{center}
+\textbf{Table 2:} Statistical parameters for quantitative variables (data subset)
+\end{center}
+
+
+## 2 (d)
+
+The scatter plots and the pairwise correlations among the quantitative predictors of are generated below. The plot below provides all of these in the same graph.
+
+The positive correlation coefficient value indicates that there lies a linearly positive relationship between the variables where the negative sign means the opposite. Higher the value, higher the correlation. For example, it is apparent that the "displacement" variable is highly correlated with the "cylinder" variable which is expected.
+
+```{r}
+library(GGally)
+ggpairs(quant.var)
+```
+
+```{r echo=FALSE, eval=FALSE}
+pairs(autodata[1:8])
+```
+
+
+```{r echo=FALSE, eval=FALSE}
+round(cor(quant.var),3)
+```
+
+
+## 2 (e)
+
+```{r echo=FALSE, eval=FALSE}
+model = lm(mpg ~ cylinders + displacement + horsepower + acceleration + weight, data = quant.var) 
+summary(model)
+```
+
+From the above correlation plot, it is evident that the "mpg" variable is highly correlated with "weight", "displacement" and "cylinders" and they have inversely proportional relationship with the gas mileage ("mpg"). Thus, these three variables will be useful in predicting "mpg". However, the "horsepower" and "acceleration" variables are moderately correlated and thus won't be helpful as much towards predicting the gas mileage.
+
+
+

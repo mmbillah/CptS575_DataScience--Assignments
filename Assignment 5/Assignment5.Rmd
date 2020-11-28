@@ -1,0 +1,536 @@
+---
+title: 'CptS 575 Data Science: Assignment 5'
+author: "Md Muhtasim Billah"
+date: "10/27/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, comment=NA)
+```
+
+# Question 1.
+
+First, we load the "Auto" dataset from the class website and remove the missing values (if any).
+
+```{r}
+#load the whole dataset as dataframe
+Auto_full = read.csv(url("https://scads.eecs.wsu.edu/wp-content/uploads/2017/09/Auto.csv"),
+                     stringsAsFactors = FALSE, na.strings = "?")
+#check the dimensions
+dim(Auto_full)
+#remove the rows with missing values
+Auto = na.omit(Auto_full)
+#check the dimensions again
+dim(Auto)
+```
+
+It was found that some values for the variable `horsepower` were `'?'` in the dataset which were removed. Checking the dimensions, it seems that there were `5` missing values in the dataset.
+
+Now, we check the variable types to see if they are properly labelled. We notice
+
+```{r}
+#check the varoable types/class
+sapply(Auto, class)
+#convert the origin variable from integer to factor
+Auto$origin = as.factor(Auto$origin)
+#check the variable types again
+sapply(Auto, class)
+```
+
+# 1(a)
+
+Multiple linear regression is performed with `mpg` as the response and all other
+variables (except `name`) as the predictors. A printout of the result is shown that includes coefficients, error and t-values for each predictor.
+
+```{r}
+model_1a = lm(mpg ~ . - name, data = Auto)
+summary(model_1a)
+```
+
+## i) 
+
+Based on a significance level $\alpha=0.05$, the intercept as well as some of the variables such as `displacement`, `weight`, `year` and `origin` seem to have significant relationship to the response `mpg` as designated by their p-value. It is also visible that, the variables `weight` and `year` have the most significant relationship since they have extremely small ($<2e^{-16}$) p-value.
+
+## ii) 
+
+The coefficient for the `displacement` variable is found to be $2.398e^{-02}$ which indicates a positive relationship with the response. This value indicates that for a unit increase of `displacement`, the response `mpg` will be increased by the amount of $2.398e^{-02}$.
+
+
+# 1(b)
+
+Diagnostics plots indicate the validity of the assumptions essential for performing linear regression. Two primary assumptions are the normality of the residuals and the constant variance (homoschedasticity) of the residuals.
+
+```{r fig.height=3.5}
+par(mfrow=c(1,2))
+plot(model_1a,1:2)
+```
+From the residual vs fitted plot (left), there seems to be a slight nonlinear pattern (quadratic) among the data points rather than random, scattered distribution which indicates that the assumption of constant variance might be violated. From the normal Q-Q plot, it seems that the residuals tend to deviate from the line at the upper tail which indicates that the distribution of the residuals might not be normal. Since diagnostic plots sometimes can be misleading, for certainty, more robust and reliable statistical tests can be further performed.
+
+
+To check if there are any unusually large outliers, we can further plot the standardized and studentized residuals against the predicted (fitted values) as below.
+
+```{r fig.height=3.5}
+par(mfrow=c(1,2))
+plot(model_1a,3)
+plot(predict(model_1a), rstudent(model_1a))
+```
+
+From the above plots, it seems that some of the residuals are have pretty large values. However, none of them are unusually high and thus can not be considered as huge outliers.
+
+To identify any observations with unusually high leverage, the residuals vs leverage plot and the hat values of the observations can be plotted as below.
+
+```{r fig.height=3.5}
+par(mfrow=c(1,2))
+plot(model_1a,5)
+plot(hatvalues(model_1a))
+```
+
+From the above plot, it seems that observation number 14 has unusually high leverage. The hat value indicates how much the predicted scores will change if this observation is excluded from the dataset. This can also be verified as below.
+
+```{r}
+which.max(hatvalues(model_1a))
+```
+
+
+# 1(c)
+
+The multiple linear regression model is fit for all the predictors (except `name`) with interaction effects (only pairwise interactions). The results are summarized below.
+
+```{r}
+model_1c = lm(mpg ~ (. - name)^2, data = Auto)
+summary(model_1c)
+```
+
+From the model summary, some of the interactions appear to be statistically significant (at a significance level $\alpha=0.05$) such as `cylinders:acceleration`, `acceleration:year`, `acceleration:origin2`, `acceleration:origin3`, `year:origin2` and `year:origin3`.  
+
+
+
+\newpage
+
+# Question 2.
+
+# 2(a)
+
+For each predictor, fit a simple linear regression model to predict the response.
+Include the code, but not the output for all models in your solution.
+
+First, load the `Boston` dataset and attach it to the kernel.
+
+```{r}
+#load the library
+library(MASS)
+#attach Boston data
+attach(Boston)
+```
+
+Now, for each predictor, a simple linear regression model is fitted to predict the response.
+
+```{r}
+lr_zn = lm(crim ~ zn, data = Boston)
+#summary(lr_zn)
+lr_indus = lm(crim ~ indus, data = Boston)
+#summary(lr_indus)
+#the type for the variable chas should be a factor
+Boston$chas = as.factor(Boston$chas)
+lr_chas = lm(crim ~ chas, data = Boston)
+#summary(lr_chas)
+lr_nox = lm(crim ~ nox, data = Boston)
+#summary(lr_nox)
+lr_rm = lm(crim ~ rm, data = Boston)
+#summary(lr_rm)
+lr_age = lm(crim ~ age, data = Boston)
+#summary(lr_age)
+lr_dis = lm(crim ~ dis, data = Boston)
+#summary(lr_dis)
+lr_rad = lm(crim ~ rad, data = Boston)
+#summary(lr_rad)
+lr_tax = lm(crim ~ tax, data = Boston)
+#summary(lr_tax)
+lr_ptratio = lm(crim ~ ptratio, data = Boston)
+#summary(lr_ptratio)
+lr_black = lm(crim ~ black, data = Boston)
+#summary(lr_black)
+lr_lstat = lm(crim ~ lstat, data = Boston)
+#summary(lr_lstat)
+lr_medv = lm(crim ~ medv, data = Boston)
+#summary(lr_medv)
+```
+
+
+
+# 2(b)
+
+Looking at the summary output from all the models, it is found that, apart from the predictor `chas`, all the other predictors have statistically significant association with the response `crim`.
+
+The meaning of the response variable `crim` and predictors `nox`, `chas`, `medv` and `dis` are as below.
+
+  \underline{crim:} Per capita crime rate by town.\newline
+  \underline{nox:} Nitrogen oxides concentration (parts per 10 million).\newline 
+  \underline{chas:} Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).\newline
+  \underline{medv:} Median value of owner-occupied homes in $1000s.\newline
+  \underline{dis:} Weighted mean of distances to five Boston employment centres.\newline
+  
+From the summary output of the individual models, the relationship between the response and the aforementioned predictors are discussed below.
+
+  \underline{crim vs nox:}
+
+The predictor `nox` has statistically significant relationship (`p-value<2e-16`) with the response variable `crim` and the relation is positive as seen from its coefficient value `31.249`. This indicates that, for a unit increase in the Nitrogen Oxides concentration (parts per 10 million), the per capita crime rate will increase by a value of `31.249` which seems very unreasonable since there is no plausible explanation for this. This model is a classic example of the phrase "correlation doesn't necessarily mean causation". Also, the R-squared values for this model is roughly `17%` which means that very little variance in the response was explained by this model and more predictors are required for a better prediction. 
+
+  \underline{crim vs chas:}
+
+The factor predictor `chas` doesn't have a statistically significant relationship (`p-value=0.209`) with the response variable `crim` and the relation is negative as seen from its coefficient value `-1.8928`. This indicates that, if tract bounds river, the per capita crime rate will decrease by a value of `1.8928`. Though there is a significant relation, there is no apparent explanation for this to happen. This is not a very reliable estimate of the response also because the R-squared values for this model is extremely small (roughly `0.31%`) which means that very little variance in the response was explained by this model and more predictors are required for a better prediction. 
+
+  \underline{crim vs medv:}
+
+The predictor `medv` has statistically significant relationship (`p-value<2e-16`) with the response variable `crim` and the relation is negative as seen from its coefficient value `-0.36316`. This indicates that, for a unit increase in the median value of owner-occupied homes (in $1000s), the per capita crime rate will decrease by a value of `0.36316`. While this makes sense since increased housing price in a locality should indicate to a better lifestyle, for better prediction of the response, more predictors are necessary. This is also seen from the R-squared values for this model which is very small (roughly `15%`).
+
+  \underline{crim vs dis:}
+
+The predictor `dis` has statistically significant relationship (`p-value<2e-16`) with the response variable `crim` and the relation is negative as seen from its coefficient value `-1.5509`. This indicates that, for a unit increase in the weighted mean of distances to five Boston employment centres, the per capita crime rate will decrease by a value of `1.5509`. This might be reasonable in the sense that, with longer commute to the workplace, there are more chances for crimes to happen. Nonetheless, for better prediction of the response, more predictors are necessary as indicated by the R-squared values for this model which is very small (roughly `14%`).
+
+How these relationships differ from one another is that first, only the first predictor seem to increase the per capita crime rate where the rest seem to cause a decrease. Second, apart from `chas`, the rest of the predictors has statistically significant relationship with the response. However, the high correlations of the predictor `nox` cannot explain the causation while `medv` and `dis` can do that to some extent. However, for all the models, the R-squared and adjusted R-squared values are very small which indicates to the necessity of a multiple linear regression model for explaining the response.
+  
+
+# 2(c)
+
+A multiple linear regression is performed on the Boston dataset which includes all the predictors altogether. 
+
+```{r}
+#regression with all the predictors
+mlr = lm(crim ~ . , data=Boston)
+summary(mlr)
+```
+The summary output indicates towards the model's high significance given by its large F-statistic value and an extremely low p-value. Also, from the model R-squared values, it is evident that this model can explain approximately `45%` of the variance of the response. This value is significantly higher from the individual simple linear regression models, however is not high enough since most of the variance remains unexplained.
+
+From the model summary, it is evident that at level of significance $\alpha=0.05$, the predictors `zn`, `dis`, `rad`, `black` and `medv` have strong relationship with the response variable `crim`. So, for these predictors, we can reject the null hypothesis ($\beta_0=0$). The predictor `nox` might also be considered to be significant since it has a marginal p-value (`0.051152`). However, the rest of the predictor doesn's seem to be statistically significant.
+
+
+# 2(d)
+
+First, a vector is created taking all the coefficients from the individual models.
+
+```{r}
+slr_coef = c(lr_zn$coefficients[2],lr_indus$coefficients[2],lr_chas$coefficients[2],
+             lr_nox$coefficients[2],lr_rm$coefficients[2],
+             lr_age$coefficients[2],lr_dis$coefficients[2],
+             lr_rad$coefficients[2],lr_tax$coefficients[2],
+             lr_ptratio$coefficients[2],lr_black$coefficients[2],
+             lr_lstat$coefficients[2],lr_medv$coefficients[2])
+round(slr_coef,3)
+```
+
+Next, another vector is created taking the coefficients (except the intercept) from the multiple linear regression model.
+
+```{r}
+mlr_coef = c(mlr$coefficients)
+mlr_coef = mlr_coef[-1]
+round(mlr_coef,3) 
+```
+
+Now, a plot is created displaying the univariate regression coefficients from (a) on the x-axis, and the multiple regression coefficients from (c) on the y-axis as below.
+
+```{r}
+plot(slr_coef,mlr_coef,main = "Mutivariate vs Univariate Coefficients",
+     xlab = "Univariate", ylab = "Multivariate")
+```
+
+Looking at the values of the coefficients as well the graph plotted above, we can see significant difference between the results from (a) and (c). The coefficients for the individual models span over a very wide range (starting from `-2.684` to `31.249`) while the coefficients from the multiple regression model span over a much shorter range (starting from `-0.987` to `0.588`). This indicates that the univariate coefficients have much stronger effect on the response while considered individually but together, the effect is minimized.
+
+
+# 2(e)
+
+```{r eval=FALSE}
+nlr_zn = lm(crim ~ poly(zn,3), data = Boston)
+summary(nlr_zn)
+nlr_indus = lm(crim ~ poly(indus,3), data = Boston)
+summary(nlr_indus)
+#the type for the variable chas should be a factor
+Boston$chas = as.factor(Boston$chas)
+nlr_chas = lm(crim ~ chas + I(chas^2) + I(chas^3), data = Boston)
+summary(nlr_chas)
+nlr_nox = lm(crim ~ poly(nox,3), data = Boston)
+summary(nlr_nox)
+nlr_rm = lm(crim ~ poly(rm,3), data = Boston)
+summary(nlr_rm)
+nlr_age = lm(crim ~ poly(age,3), data = Boston)
+summary(nlr_age)
+nlr_dis = lm(crim ~ poly(dis,3), data = Boston)
+summary(nlr_dis)
+nlr_rad = lm(crim ~ poly(rad,3), data = Boston)
+summary(nlr_rad)
+nlr_tax = lm(crim ~ poly(tax,3), data = Boston)
+summary(nlr_tax)
+nlr_ptratio = lm(crim ~ poly(ptratio,3), data = Boston)
+summary(nlr_ptratio)
+nlr_black = lm(crim ~ poly(black,3), data = Boston)
+summary(nlr_black)
+nlr_lstat = lm(crim ~ poly(lstat,3), data = Boston)
+summary(nlr_lstat)
+nlr_medv = lm(crim ~ poly(medv,3), data = Boston)
+summary(nlr_medv)
+```
+
+For the dummy variable `char`, higher order non-linearity of the given form doesn't mean anything since the squared and cubic values for 0 and 1 contains NA values.
+
+At a level of significance, $\alpha=0.05$, the **quadratic term** of all the predictors apart from `black` has statistical significane which indicates that a non-linear, quadratic model can be considered for making better prediction of the response.
+
+At a level of significance, $\alpha=0.05$, the **cubic term** of the predictors `indus`, `nox`, `age`, `dis`, `ptratio` and `medv` have statistical significane which indicates that a non-linear, cubic model can be considered for making better prediction of the response. 
+
+
+
+\newpage
+
+# Question 3.
+
+# 3(a)
+
+Given, the variables,\newline
+
+  $X1$ = Hours studied,\newline
+  $X2$ = Undergrad GPA,\newline
+  $X3$ = PSQI score (a sleep quality index), and \newline
+  $Y$ = Receive an A.
+
+And, the estimated coefficient from the logistic regression are, \newline
+
+  $\beta_0=-7$\newline
+  $\beta_1=0.1$\newline
+  $\beta_2=1$\newline
+  $\beta_3=-0.04$\newline
+
+From logistic regression, the probability for a student to receive an A can be expressed as follows.
+
+$$\hat{P}(Y=1\ | \ X_1,X_2,X_3)=\hat{P}(X)=\frac{e^{\hat{\beta_0}+\hat{\beta_1}X_1+\hat{\beta_2}X_2+\hat{\beta_3}X_3}}{1+e^{\hat{\beta_0}+\hat{\beta_1}X_1+\hat{\beta_2}X_2+\hat{\beta_3}X_3}}$$
+
+From the above equation, the probability, $Y=\hat{P}(X)$ that a student who studies for $X_1=32 \ h$, has a PSQI score of $X_3=12$ and has an undergrad GPA of $X_2=3.0$ gets an A in the class can be calculated.
+
+$$Y=\hat{P}(X)=\frac{e^{-7\ +\ 0.1\times32\ +\ 1\times 3.0 \ +\ (-0.04)\times 12}}{1+e^{-7\ +\ 0.1\times32\ +\ 1\times 3.0 \ +\ (-0.04)\times 12}}$$
+
+Here,
+
+$${-7\ +\ 0.1\times32\ +\ 1\times 3.0 \ +\ (-0.04)\times 12}=-1.28$$
+Thus, the probablity of getting an A is,
+$$Y=\frac{e^{-1.28}}{1+e^{-1.28}}=\frac{0.278}{1+0.278}=0.2175$$
+
+
+# 3(b)
+
+Another form of the logistic regression equation is as follows,
+
+$$\log\frac{\hat{P}(X)}{1-\hat{P}(X)}=\hat{\beta_0}+\hat{\beta_1}X_1+\hat{\beta_2}X_2+\hat{\beta_3}X_3$$
+Here, the chance for getting an A,
+
+$$\hat{P}(X)=Y=0.5$$
+And,
+
+$$\hat{\beta_0}+\hat{\beta_1}X_1+\hat{\beta_2}X_2+\hat{\beta_3}X_3=-7\ +\ 0.1\times X_1\ +\ 1\times 3.0 \ +\ (-0.04)\times 12=0.1X_1-4.48$$
+Thus,
+
+$$\log\frac{0.5}{1-0.5}=0.1X_1-4.48$$
+or,
+$$\log(1)=0.1X_1-4.48$$
+or,
+$$X_1=44.8$$
+
+Thus, the student in part (a) needs to study for $44.8$ hours to have a 50% chance of getting an A in the class.
+
+
+# 3(c)
+
+Here, the chance for getting an A,
+
+$$\hat{P}(X)=Y=0.5$$
+
+And,
+
+$$\hat{\beta_0}+\hat{\beta_1}X_1+\hat{\beta_2}X_2+\hat{\beta_3}X_3=-7\ +\ 0.1\times X_1\ +\ 1\times 3.0 \ +\ (-0.04)\times 3=0.1X_1-4.12$$
+Thus,
+
+$$\log\frac{0.5}{1-0.5}=0.1X_1-4.12$$
+or,
+$$\log(1)=0.1X_1-4.12$$
+or,
+$$X_1=41.2$$
+Thus, a student with a $3.0$ GPA and a PSQI score of $3$ will need to study for $41.2$ hours to have a 50% chance of getting an A in the class.
+
+
+\newpage
+
+# Question 4.
+
+First, we load the data and the necessary packages.
+
+```{r}
+#load necessary libraries
+library(GuardianR)
+library(plyr) 
+library(dplyr)
+library(curl) 
+#library(RCurl)
+library(quanteda)
+#load the data
+articles=read.csv("/Users/muhtasim/Desktop/GuardianArticles.csv",
+                  stringsAsFactors=FALSE, fileEncoding="latin1")
+```
+
+We remove any articles with zero word count and then find the counts for different types of articles.
+
+```{r}
+articles = na.omit(articles)
+count = articles %>% 
+        group_by(section) %>% 
+        tally
+count
+```
+
+Then, we check the `body`, `section` and `title` of the news for anomalies.
+
+```{r}
+library(stringi)
+#check the body, section and title of the news for anomalies
+#title
+print(articles$title[1], max.levels = 0)
+#section
+print(articles$section[1], max.levels = 0)
+#body
+cat(stri_pad(stri_wrap(articles$body[1]),side = 'right'),sep = '\n')
+```
+
+From the randomly selected article body, it seems like there is no need for further cleaning the data. Now that we are confident about the cleanliness of the data, we will do the rest of the procedures.
+
+
+```{r eval=FALSE, echo=FALSE}
+library(textclean)
+library(tm)
+library(stringr)
+library(stringi)
+abv = c("bn","am","pm") 
+rep = c("","","")
+clean_function = function(data){
+  data = replace_html(data)
+  data = replace_tag(data)
+  data = replace_email(data)
+  data = replace_internet_slang(data) 
+  data = replace_url(data)
+  data = str_replace_all(data, "<.*?>","")
+  data = lapply(data, function(x) gsub("[[:punct:]]"," ",x,useBytes = TRUE)) 
+  data = str_replace_all(data, " – ", " ")
+  data = gsub("\"", " ", data,useBytes = TRUE)
+  #data = gsub(".", " ", data)
+  data = removeNumbers(data)
+  data = gsub("\\b\\d+\\b", "", data,useBytes = TRUE)
+  data = replace_curly_quote(data)
+  data = replace_symbol(data)
+  data = replace_abbreviation(data,abv,rep)
+  data = replace_abbreviation(data)
+  data = replace_word_elongation(data)
+  data = replace_contraction(data)
+  data = replace_incomplete(data)
+  data = iconv(data,from="UTF-8",to="ASCII//TRANSLIT") 
+  data = tolower(data)
+  data = trimws(data)
+  data = str_squish(data)
+  data = str_replace_all(data, "[^a-zA-Z\\s]","")
+}
+articles$body = clean_function(articles$body) 
+#print(articles$body[3],max.levels=0)
+```
+
+# 4(a)
+
+First, we will create the word corpus from all the articles and then perform tokenization and stemming on the corpus. Then we creathe the document-feature matrix.
+
+```{r}
+#create corpus
+corpus = corpus(articles$body)
+#create token
+tokens = tokens(corpus)
+#removing punctuations and numbers from the tokens
+tokens = tokens(tokens, remove_punct = TRUE, remove_numbers = TRUE)
+#stemming the token
+tokens = tokens_wordstem(tokens) 
+#creating the document-features matrix
+dfm = dfm(tokens, remove = stopwords())
+```
+
+Now, we will keep only the words which appear in more than 10% of the documents by trimming the dfm.
+
+```{r}
+# we keep only words occurring frequently (in more than 10% fo the documents)
+feature_matrix = dfm_trim(dfm, min_docfreq = 100, min_termfreq = 0.1, termfreq_type = "quantile")
+feature_matrix
+```
+
+Now, we will print the features of a random article along with the non-zero entries of its feature vector. We select article 1375.
+
+```{r}
+#selecting a random article, article#1375
+random_doc = as.data.frame(feature_matrix[1375,])
+randoc = random_doc[, random_doc != 0]
+nonzero = t(randoc)
+nonzero
+```
+
+# 4(b)
+
+Now, we will apply Naive Bayes for classification of the articles into 6 classes or categories.
+
+```{r}
+#load required packages
+library(caret)
+library(e1071)
+#finding the correlation matrix and
+#removing highly correlated features from the matrix 
+matrix = as.matrix(feature_matrix) 
+cor_Matrix = cor(matrix)
+#store the number of rows of the matrix
+matrix_rows = nrow(matrix) 
+matrix_rows
+cor_indices = findCorrelation(cor_Matrix, cutoff = 0.90) 
+matrix = matrix[, -c(cor_indices)]
+```
+
+```{r}
+#Splitting data into train and test set
+num_train = (80/100)*matrix_rows 
+train_data = matrix[1:num_train,]
+test_data = matrix[(num_train+1):matrix_rows,]
+#labels
+train_label = articles[1:num_train,]$section
+test_label = articles[(num_train+1):matrix_rows,]$section
+#classify using Naive Bayes
+classifier = naiveBayes(train_data, as.factor(train_label) ) 
+#make predictions
+prediction = predict(classifier, test_data)
+#generate the confusion matrix
+confusion_matrix = confusionMatrix(prediction,as.factor(test_label)) 
+confusion_matrix
+```
+
+Now, calculate the precision of our prediction.
+
+```{r}
+ #precision for each class
+precision = confusion_matrix$byClass[,5]
+precision
+```
+
+Finally, we calculate the recall of the prediction.
+
+```{r}
+#recall
+recall = confusion_matrix$byClass[, 6]
+recall
+```
+
+
+
+
+
+
+
+
+
+
+

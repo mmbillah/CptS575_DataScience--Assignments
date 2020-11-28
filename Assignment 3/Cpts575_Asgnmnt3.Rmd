@@ -1,0 +1,294 @@
+---
+title: 'CptS 575 Data Science: Assignment 3'
+author: "Md Muhtasim Billah"
+date: "9/21/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.align='center',message=FALSE,warning=FALSE)
+```
+
+# Question 1
+
+Reading in the data in R as a data frame and printing the first few values of the columns with a header including “sleep”.
+
+
+```{r}
+library(dplyr)
+msleep = read.csv(url("https://scads.eecs.wsu.edu/wp-content/uploads/2017/10/msleep_ggplot2.csv"), 
+                  header = TRUE)
+sleep_columns = select(msleep,contains("sleep"))
+head(sleep_columns)
+```
+
+## 1 (a)
+
+The number of animals which weigh under 1 kilogram and sleep more than 14 hours a day.
+
+```{r}
+library(dplyr)
+anim_1kg_14h = filter(msleep, bodywt<1 & sleep_total>14)
+anim_1kg_14h
+count(anim_1kg_14h)
+```
+
+## 1 (b)
+
+The name, order, sleep time and bodyweight of the animals with the 6 longest sleep times, in order of sleep time.
+
+```{r}
+head(arrange(select(msleep, name, order, sleep_total, bodywt),desc(sleep_total)),n=6)
+```
+
+
+## 1 (c)
+
+Adding two new columns to the dataframe; "wt_ratio" with the ratio of brain size to body weight, "rem_ratio" with the ratio of rem sleep to sleep time.
+
+```{r}
+msleep2 = mutate(msleep, wt_ratio = brainwt/bodywt, rem_ratio = sleep_rem/sleep_total)
+head(msleep2)
+```
+
+## 1 (d)
+
+Displaying the average, min and max sleep times for each order.
+
+```{r}
+msleep %>% group_by(order) %>% summarise(sleep_avg = mean(sleep_total), sleep_min = min(sleep_total),
+                                         sleep_max = max(sleep_total))
+```
+
+
+## 1 (e)
+
+Imputing the missing brain weights as the average wt_ratio for that animal’s order times the animal’s weight. 
+
+```{r}
+missingBrainWtRatio = msleep %>% 
+  group_by(order) %>% 
+  mutate(
+    brainwt=ifelse(
+      is.na(brainwt),
+      ifelse(is.nan(mean(brainwt,na.rm=TRUE)),0,
+             mean(brainwt,na.rm=TRUE))/mean(bodywt,na.rm=TRUE),brainwt)) %>%
+  ungroup(order)
+head(missingBrainWtRatio)
+```
+
+Making a second copy of the dataframe, but this time imputing missing brain weights with the average brain weight for that animal’s order. 
+
+```{r}
+missingBrainWtRatio2 = msleep %>%
+  group_by(order) %>%
+  mutate(
+    brainwt = ifelse(
+      is.na(brainwt),
+      ifelse(is.nan(mean(brainwt,na.rm = TRUE)),0,
+             mean(brainwt,na.rm = TRUE)), brainwt)) %>%
+  ungroup(order)
+head(missingBrainWtRatio2)
+```
+
+The best way to impute the data is by replacing the null values with the mean. Thus, even if the observations are removed from the dataset, the mean value will remain the same which will provide some statistical advantages. 
+
+The above procedure can be applied for filling the missing values of other columns such as "sleep_rem" and "sleep_cycle" which are shown below (one at a time). 
+
+```{r}
+missingSleepRem = msleep %>%
+  group_by(order) %>%
+  mutate(
+    sleep_rem = ifelse(
+      is.na(sleep_rem),
+      ifelse(is.nan(mean(sleep_rem,na.rm = TRUE)),0,
+             mean(sleep_rem,na.rm = TRUE)), sleep_rem)) %>%
+  ungroup(order)
+head(missingSleepRem)
+```
+
+
+```{r}
+missingSleepCycle = msleep %>%
+  group_by(order) %>%
+  mutate(
+    sleep_cycle = ifelse(
+      is.na(sleep_cycle),
+      ifelse(is.nan(mean(sleep_cycle,na.rm = TRUE)),0,
+             mean(sleep_cycle,na.rm = TRUE)), sleep_cycle)) %>%
+  ungroup(order)
+head(missingSleepCycle)
+```
+
+\newpage
+
+# Question 2.
+
+Loading the who dataset from the "tidyr" package.
+
+```{r}
+library(tidyr)
+head(who)
+```
+
+Tidying the dataset according to the case study provided here: http://r4ds.had.co.nz/tidy-data.html#case-study
+
+```{r}
+#considering the columns "new_sp_m014" to "newrel_f65" as values, they are put under the column name "key" 
+#and their number of appearences are put under "cases"
+
+who1 = who %>% 
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  )
+
+#counting the values in the "key" column
+who1 %>% count(key)
+#replacing "newrel" with "new_rel"
+who2 = who1 %>% 
+  mutate(names_from = stringr::str_replace(key, "newrel", "new_rel"))
+#separating the "key" column into 3 columns ("new", "type", "sexage")
+who3 = who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+#dropping "new column since it is constant and
+#dropping "iso2" and "iso3" since they are redundant
+who4 = who3 %>% 
+  select(-new, -iso2, -iso3)
+#separating sex and age, splitting after the first character
+who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+```
+
+
+## 2(a)
+
+The line <mutate(key = stringr::str_replace(key, "newrel", "new_rel"))> is necessary to maintain the consistency of the values of the column "key" in the dataset. Specially, when we apply the "separate()" method to create three new columns ("new", "type", "sexage"), if the previous line is not executed, "newrel" will remain under the "new column rather than being splitted into two different column (since "_" is used as the separator). Thus, it is required to properly tidy the data.
+
+
+## 2(b)
+
+```{r}
+
+WithNA = who %>% 
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = FALSE
+  )
+
+WithoutNA = who %>% 
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  )
+count(WithNA)
+count(WithoutNA)
+EntriesRemoved = count(WithNA) - count(WithoutNA)
+EntriesRemoved
+```
+
+
+## 2(c)
+
+Explicit missing value is recognized by a specific representation of the value such as row=NA which indicates that a certain row has a missing value. On the other hand, implicit missing value is represented differently such as row="" or row=0.
+
+```{r}
+implicitMissingVals = who5 %>%
+  filter(cases==0) %>%
+  nrow()
+implicitMissingVals
+```
+
+
+## 2(d)
+
+Looking at the features (country, year, var, sex, age, cases) in the tidied data, it seems that the feature "age" is typed as a character variable. It would be more reasonable to treat this as an integer.
+
+```{r}
+head(who5)
+```
+
+## 2(e)
+
+The top 5 countries with the highest number of TB cases are shown in the following bar chart. It is interesting to see that 4 of these countries belong to Asia.
+
+```{r fig.height=6, fig.width=5}
+top5countries = who5 %>%
+  group_by(country) %>%
+  tally(cases) %>%
+  top_n(5)
+
+library(ggplot2)
+
+top5plot = ggplot(data=top5countries, aes(x=country, y=n)) +
+  geom_bar(stat="identity", colour = "deepskyblue3", fill = "deepskyblue3") +
+  ggtitle("Top 5 Countries with TB Cases") + ylab("Total Number of Cases") +   xlab("Country") + labs(fill = "Private?") +
+  theme(
+    panel.background = element_rect(fill = "grey20"),
+    panel.grid.major = element_line(colour = "grey60", size=0.25),
+    panel.grid.minor = element_line(colour = "grey60", linetype = "dashed"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    plot.title = element_text(size=15, hjust=0.5, vjust = 1.5, family = "Palatino", colour = "Black", margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", colour = "Black", margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_text(size = 10, family = "Palatino", colour = "grey50", angle = 90),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", colour = "Black", margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+  )
+
+top5plot
+```
+
+
+## 2(f)
+
+Constructing the table.
+
+```{r}
+Site = c("facebook", "myspace", "snapchat", "twitter", "tiktok")
+U30.F = c(30,1,6,18,44)
+U30_M = c(25,2,5,23,60)
+O30.F = c(66,3,3,12,2)
+O30.M = c(58,6,2,28,7)
+siteDemo = data.frame(Site,U30.F,U30_M,O30.F,O30.M)
+siteDemo
+```
+
+Tidying the dataset.
+
+```{r}
+tidysiteDemo = siteDemo %>%
+  gather(U30.F:O30.M,key = "UsersAge_Sex",value = "Count", na.rm = TRUE) %>%
+  mutate(UsersAge_Sex = stringr::str_replace(UsersAge_Sex, "U30_M", "U30.M")) %>%
+  separate(UsersAge_Sex, c("AgeGroup","Gender"))
+tidysiteDemo
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

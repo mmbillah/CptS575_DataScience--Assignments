@@ -1,0 +1,212 @@
+---
+title: 'Cpts 575 Data Science: Assignment 4'
+author: "Md Muhtasim Billah"
+date: "10/7/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.align='center',message=FALSE,warning=FALSE)
+```
+
+# Question 1
+
+## 1 (a)
+
+Filtering the dataset (using a left join) to display the tail number, year, month, day, hour, origin, and humidity for all flights heading to Tampa International Airport (TPA) on the afternoon of November 1, 2013.
+
+```{r}
+# load packages
+library(nycflights13)
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+Humidity = weather %>%
+           select(origin, humid)
+TampaFlights = flights %>%
+               select(dest, dep_time, tailnum, year, month, day, hour, origin) %>%
+               filter(dest=='TPA' & month==11 & day==1 & year==2013 & dep_time>=1200) %>%
+               select(-dest, -dep_time) %>%
+               left_join(Humidity, by = 'origin')
+TampaFlights
+```
+
+
+## 1 (b)
+
+By definition, `anti_join(x, y)` drops all observations in x that have a match in y. To explore the differences between the two joins provided in the questions, we'll run them both. But before that, let's look at the number of rows and columns of these two tables.
+
+Now, we run the first command.
+ 
+```{r}
+join1 = anti_join(flights, airports, by = c("dest" = "faa"))
+join1
+```
+
+Now, let's run the second command.
+
+```{r}
+join2 = anti_join(airports, flights, by = c("faa" = "dest"))
+join2
+```
+
+```{r}
+#number of dropped observations (rows) for join1
+DroppedObs1 = nrow(flights) - nrow(join1)
+DroppedObs1
+#number of dropped observations (rows) for join2
+DroppedObs2 = nrow(airports) - nrow(join2)
+DroppedObs2
+#checking that the number of columns after the join equals
+#the number of columns of the first table
+ncol(flights) == ncol(join1)
+ncol(airports) == ncol(join2)
+```
+
+
+By looking at the results, the following facts (differences) are noticed.
+
+  * For the first join, all observations from the `flights` table were dropped that have a match in the `airports` table.
+  * On the other hand, for the second join, all observations from the `airports` table were dropped that have a match in the `flights` table.
+  * For the first join, the antijoin has been made by the mapping the variable `dest` (from the `flights` table) onto the `faa` variable (from the `airports` table).
+  * On the other hand, for the second join, the antijoin has been made by the mapping the variable `faa` (from the `airports` table) onto the `dest` variable (from the `flights` table).
+  * While the number of columns after both joins remain exactly the same as the first table in the join, the number of observations (rows) are different for each join.
+  * After the first join, `329,174` observations were dropped and the number of remaining observations are `7,602`. 
+  * After the second join, `101` observations were dropped and the number of remaining observations are `1,357`.
+
+
+
+## 1(c)
+
+Selecting the origin and destination airports and their latitude and longitude for all fights in the dataset.
+
+```{r}
+Flights_OriginDest = flights %>%
+             select(origin,dest)
+Airports_LatLong = airports %>%
+                  select(faa,lat,lon)
+
+AllFlights = inner_join(Flights_OriginDest, Airports_LatLong, by = c("dest"="faa"))
+AllFlights
+```
+
+
+
+## 1(d)
+
+Use group_by and count to get the number of flights to each unique origin/destination combination. Hint: There should be 217 of these total.
+
+```{r}
+Num_UniqueFlights = AllFlights %>%
+                    group_by(origin,dest) %>%
+                    count(sort = TRUE)
+Num_UniqueFlights                    
+```
+
+## 1(e)
+
+Produce a map that colors each destination airport by the average air time of its incoming flights. Here is a code snippet to draw a map of all flight destinations, which you can use as a starting point. You may need to install the maps packages if you have not already. Adjust the title, axis labels and aesthetics to make this visualization as clear as possible. Hint: You may find it useful to use a different type of join in your solution than the one in the snippet.
+
+```{r}
+Flights_DestAirtime = flights %>% 
+                      group_by(dest) %>% 
+                      summarise(
+                                count = n(),
+                                avg_air_time = mean(air_time, na.rm = TRUE)
+                               )
+Airports_LatLong = airports %>%
+                  select(faa,lat,lon)
+
+DestAirports = inner_join(Flights_DestAirtime, Airports_LatLong, by = c("dest"="faa")) %>%
+               select(dest, lat, lon, avg_air_time)
+
+DestAirports %>% ggplot(aes(lon, lat)) +
+borders("state") + geom_point(aes(color = avg_air_time),alpha = 0.75) + coord_quickmap() +
+  ggtitle("Average Air Time for US Airports ") + xlab("Longitute") + ylab("Latitude") + 
+  labs(fill = "Airtime") +
+  theme(
+    plot.title = element_text(size=15, hjust=0.5, vjust = 1.5, family = "Palatino", 
+                              colour = "Black", margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", 
+                                colour = "Black", margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", 
+                                colour = "Black", margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    legend.title = element_text(size=10, vjust = -0.0, family = "Palatino", 
+                                colour = "Black", margin = margin(0, 0, 20, 0))
+  )
+```
+
+
+
+# Question 2.
+
+The coordinates for all the cities (lat and long) were collected manually (one by one) to complete the dataset which contain the columns `City Name`, `Country`, `Longitude` and `Latitude`. Then the cities were plotted in the world map.
+
+```{r}
+mapdata = read.csv("/Users/muhtasim/Desktop/hometowns.csv", header = TRUE)
+
+mapdata %>% ggplot(aes(Longitude, Latitude)) +
+borders("world") + geom_point(aes(),alpha = 0.75) + coord_quickmap() +
+  #geom_polygon(fill="lightgray", colour = "white") +
+  ggtitle("Hometowns of CptS 575 Data Science Students") + xlab("Longitute") + ylab("Latitude") + 
+  #labs(fill = "Airtime") +
+  theme(
+    plot.title = element_text(size=15, hjust=0.5, vjust = 1.5, family = "Palatino", 
+                              colour = "Black", margin = margin(10, 0, 0, 0)),
+    axis.title.x = element_text(size=14, vjust = -0.3, family = "Palatino", 
+                                colour = "Black", margin = margin(0, 0, 20, 0)),
+    axis.text.x = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    axis.title.y = element_text(size=14, vjust = 1.5, family = "Palatino", 
+                                colour = "Black", margin = margin(10, 0, 10, 10)),
+    axis.text.y = element_text(size = 10, family = "Palatino", colour = "grey50"),
+    legend.title = element_text(size=10, vjust = -0.0, family = "Palatino", 
+                                colour = "Black", margin = margin(0, 0, 20, 0))
+  )
+```
+
+
+The same map created using the https://batchgeo.com/features/map-coordinates/ website as below.
+
+```{r  out.width = "80%"}
+knitr::include_graphics("/Users/muhtasim/Desktop/map")
+```
+
+
+# Question 3.
+
+The document chosen for making a word cloud is a two page long summary of my research for the year 2019.
+
+```{r}
+library(wordcloud)
+library(RColorBrewer)
+text = readLines("/Users/muhtasim/Desktop/text.txt")
+wordcloud(text, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+```
+
+\centering
+\large
+\textbf{Caption:} Md Muhtasim Billah's annual Research Review, written in February 2020. (using Wordcloud library in R)
+
+```{r  out.width = "80%"}
+knitr::include_graphics("/Users/muhtasim/Desktop/wordle1.png")
+```
+
+\centering
+\large
+\textbf{Caption:} Md Muhtasim Billah's annual Research Review, written in February 2020. (using Wordle)
+
+
+
+
+
+
+
+
+
